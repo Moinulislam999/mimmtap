@@ -3,679 +3,518 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CryptoTap - Telegram Mini App</title>
+    <title>Mim Stars</title>
     <!-- Telegram WebApp SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     
     <style>
+        /* --- CSS STYLING (BUMS / Mim Stars Theme) --- */
         :root {
-            --bg-color: #0d0d0d;
-            --card-bg: #1c1c1e;
-            --primary: #00ff9d;
-            --primary-dim: #00ff9d33;
-            --text-color: #ffffff;
-            --secondary-text: #8e8e93;
-            --danger: #ff453a;
-            --energy-bar: #ffd60a;
+            --bg-color: #0f172a;
+            --sidebar-bg: rgba(0, 0, 0, 0.6);
+            --card-bg: #1e293b;
+            --primary: #f59e0b; /* Coin Gold */
+            --energy: #3b82f6; /* Blue Energy */
+            --text-main: #ffffff;
+            --text-dim: #94a3b8;
         }
 
         * {
             box-sizing: border-box;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
+            font-family: 'Segoe UI', sans-serif;
         }
 
         body {
             margin: 0;
             padding: 0;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            overflow: hidden;
+            background: url('https://img.freepik.com/free-vector/cartoon-night-city-street- skyscrapers-buildings_1441-2172.jpg') no-repeat center center fixed;
+            background-size: cover;
+            color: var(--text-main);
+            overflow: hidden; /* No scrolling */
             height: 100vh;
             display: flex;
             flex-direction: column;
         }
 
-        /* --- UI UTILITIES --- */
-        .hidden { display: none !important; }
-        .flex-center { display: flex; justify-content: center; align-items: center; }
-        .full-width { width: 100%; }
+        /* Overlay to darken background */
+        body::before {
+            content: '';
+            position: absolute; top:0; left:0; right:0; bottom:0;
+            background: rgba(15, 23, 42, 0.85);
+            z-index: -1;
+        }
 
         /* --- HEADER --- */
-        .header {
-            padding: 15px;
+        .top-bar {
+            padding: 10px 15px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, transparent 100%);
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(5px);
         }
-        .user-info {
+        .user-profile {
             display: flex;
             align-items: center;
             gap: 10px;
         }
-        .user-avatar {
-            width: 32px;
-            height: 32px;
-            background: var(--primary);
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-weight: bold;
-            color: #000;
+        .avatar {
+            width: 40px; height: 40px;
+            background: #6366f1;
+            border-radius: 8px;
+            display: flex; justify-content: center; align-items: center;
+            font-weight: bold; border: 2px solid #fff;
         }
-        .username { font-weight: 600; font-size: 14px; }
+        .level-info { font-size: 12px; }
+        .lvl-bar-bg { width: 80px; height: 4px; background: #333; margin-top: 4px; border-radius: 2px; }
+        .lvl-bar-fill { width: 30%; height: 100%; background: #3b82f6; border-radius: 2px; }
 
-        /* --- SCREENS --- */
-        .screen {
+        .top-stats {
+            display: flex; gap: 15px; font-size: 12px;
+        }
+        .stat-box { text-align: right; }
+        .stat-val { font-weight: bold; font-size: 14px; }
+
+        /* --- MAIN GAME AREA --- */
+        .main-stage {
             flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-            padding-bottom: 90px; /* Space for bottom nav */
+            position: relative;
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
         }
 
-        /* --- HOME SCREEN --- */
-        .balance-container {
-            margin-top: 20px;
+        /* Balance */
+        .balance-wrap {
             text-align: center;
+            margin-bottom: 20px;
+            margin-top: -40px; /* Push up slightly */
         }
-        .balance-label { color: var(--secondary-text); font-size: 14px; }
-        .balance-amount {
+        .coin-img { width: 24px; vertical-align: middle; }
+        .main-balance {
             font-size: 42px;
             font-weight: 800;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-        .coin-icon { width: 36px; height: 36px; background: gold; border-radius: 50%; border: 3px solid orange; }
-
-        .game-area {
-            flex: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-            width: 100%;
+            text-shadow: 0 0 10px rgba(0,0,0,0.8);
         }
 
-        .tap-button {
-            width: 240px;
-            height: 240px;
-            border-radius: 50%;
-            background: radial-gradient(circle at 30% 30%, #4a4a4a, #1a1a1a);
-            border: 8px solid var(--card-bg);
-            box-shadow: 0 0 30px rgba(0, 255, 157, 0.2);
+        /* Character / Tap Button */
+        .character-container {
             position: relative;
+            width: 280px;
+            height: 350px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             cursor: pointer;
             transition: transform 0.1s;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 80px;
         }
-        .tap-button:active { transform: scale(0.95); }
-        .tap-button::after {
-            content: '';
-            position: absolute;
-            top: 10px; left: 10px; right: 10px; bottom: 10px;
-            border-radius: 50%;
-            border: 2px solid rgba(255,255,255,0.1);
-        }
-
-        .energy-container {
-            width: 100%;
-            max-width: 350px;
-            margin-bottom: 10px;
-        }
-        .energy-info {
-            display: flex;
-            justify-content: space-between;
-            font-size: 14px;
-            margin-bottom: 5px;
-            font-weight: 600;
-        }
-        .energy-bar-bg {
-            width: 100%;
-            height: 12px;
-            background: var(--card-bg);
-            border-radius: 6px;
-            overflow: hidden;
-        }
-        .energy-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #ffd60a, #ff9f0a);
-            width: 100%;
-            transition: width 0.3s ease;
-        }
-
-        /* --- FLOATING NUMBERS ANIMATION --- */
-        .float-text {
-            position: absolute;
-            color: #fff;
-            font-weight: bold;
-            font-size: 24px;
-            pointer-events: none;
-            animation: floatUp 1s ease-out forwards;
-            z-index: 100;
-        }
-        @keyframes floatUp {
-            0% { transform: translateY(0) scale(1); opacity: 1; }
-            100% { transform: translateY(-100px) scale(1.5); opacity: 0; }
-        }
-
-        /* --- LISTS (Tasks, Upgrades, Leaderboard) --- */
-        .list-item {
-            background: var(--card-bg);
-            width: 100%;
-            padding: 15px;
-            border-radius: 12px;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .item-left { display: flex; align-items: center; gap: 12px; }
-        .item-icon { font-size: 24px; }
-        .item-details h4 { margin: 0; font-size: 16px; }
-        .item-details p { margin: 2px 0 0; font-size: 12px; color: var(--secondary-text); }
+        .character-container:active { transform: scale(0.97); }
         
-        .btn-action {
-            background: var(--primary);
-            color: #000;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            font-size: 13px;
+        .character-img {
+            font-size: 150px;
+            filter: drop-shadow(0 0 20px rgba(245, 158, 11, 0.4));
+            z-index: 2;
         }
-        .btn-action:disabled {
-            background: #3a3a3c;
-            color: #8e8e93;
-            cursor: not-allowed;
+        /* Tap Me Text */
+        .tap-hint {
+            position: absolute;
+            bottom: 40px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 0 2px 4px #000;
+            z-index: 3;
+            pointer-events: none;
         }
 
-        /* --- BOTTOM NAVIGATION --- */
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 80px;
-            background: rgba(28, 28, 30, 0.95);
-            backdrop-filter: blur(10px);
+        /* --- SIDEBARS (Left & Right) --- */
+        .sidebar {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 10;
+        }
+        .sidebar-left { left: 10px; }
+        .sidebar-right { right: 10px; }
+
+        .side-icon {
+            width: 50px; height: 50px;
+            background: linear-gradient(180deg, #334155, #1e293b);
+            border: 1px solid #475569;
+            border-radius: 12px;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            font-size: 10px; color: #fff;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            cursor: pointer;
+        }
+        .side-icon span { font-size: 20px; margin-bottom: 2px; }
+        .side-icon p { margin: 0; font-size: 9px; }
+
+        /* --- BOTTOM STATS (Energy) --- */
+        .bottom-stats-bar {
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+        }
+        .energy-box {
+            display: flex; align-items: center; gap: 8px;
+            background: #1e293b;
+            padding: 5px 12px;
+            border-radius: 20px;
+            border: 1px solid #334155;
+            width: 60%;
+        }
+        .bolt-icon { color: #3b82f6; font-size: 18px; }
+        .energy-text { font-size: 14px; font-weight: bold; }
+        
+        .per-tap-box {
+            color: #fbbf24;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        /* --- FOOTER NAV --- */
+        .footer-nav {
+            height: 70px;
+            background: #1e293b;
             display: flex;
             justify-content: space-around;
             align-items: center;
-            border-top: 1px solid rgba(255,255,255,0.1);
-            z-index: 1000;
-            padding-bottom: 15px; /* iOS home indicator safe area */
+            border-top: 1px solid #334155;
+            padding-bottom: 5px;
         }
-        .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            color: var(--secondary-text);
-            font-size: 10px;
-            gap: 4px;
-            cursor: pointer;
-            width: 60px;
+        .nav-btn {
+            display: flex; flex-direction: column; align-items: center;
+            color: #64748b; font-size: 10px; gap: 4px;
+            width: 20%;
         }
-        .nav-item.active { color: var(--primary); }
-        .nav-icon { font-size: 24px; margin-bottom: 2px; }
+        .nav-btn.active { color: #fbbf24; }
+        .nav-icon { font-size: 22px; margin-bottom: 2px; }
 
-        /* --- SECTION HEADERS --- */
-        .section-title {
-            font-size: 24px;
-            font-weight: 800;
-            margin-bottom: 20px;
-            text-align: center;
+        /* --- ANIMATIONS --- */
+        .float-text {
+            position: absolute;
+            color: #fff; font-weight: bold; font-size: 28px;
+            pointer-events: none;
+            animation: floatUp 0.8s ease-out forwards;
+            z-index: 100;
+            text-shadow: 0 0 5px orange;
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-100px) scale(1.2); opacity: 0; }
+        }
+
+        /* Modal/Popup styling (Simplified) */
+        .modal {
+            position: fixed; top:0; left:0; width:100%; height:100%;
+            background: rgba(0,0,0,0.8);
+            display: none; justify-content: center; align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: #1e293b; padding: 20px; border-radius: 15px;
+            text-align: center; width: 80%; border: 1px solid #475569;
         }
     </style>
 </head>
 <body>
 
-    <!-- Header -->
-    <div class="header">
-        <div class="user-info">
-            <div class="user-avatar" id="userAvatar">U</div>
-            <div class="username" id="userName">Loading...</div>
+    <!-- TOP HEADER -->
+    <header class="top-bar">
+        <div class="user-profile">
+            <div class="avatar" id="userAvatar">U</div>
+            <div>
+                <div style="font-weight:bold" id="userName">User</div>
+                <div class="level-info">Lvl 1</div>
+                <div class="lvl-bar-bg"><div class="lvl-bar-fill"></div></div>
+            </div>
         </div>
-        <!-- Settings icon could go here -->
-    </div>
+        <div class="top-stats">
+            <div class="stat-box">
+                <div class="stat-val" style="color:#60a5fa">0</div>
+                <div style="color:#94a3b8">Diamonds</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-val" style="color:#a78bfa">0</div>
+                <div style="color:#94a3b8">Ton</div>
+            </div>
+        </div>
+    </header>
 
-    <!-- 1. HOME SCREEN -->
-    <div id="screen-home" class="screen">
-        <div class="balance-container">
-            <div class="balance-label">Total Balance</div>
-            <div class="balance-amount">
-                <div class="coin-icon"></div>
+    <!-- MAIN GAME AREA -->
+    <div class="main-stage">
+        
+        <!-- Balance Display -->
+        <div class="balance-wrap">
+            <div class="main-balance">
+                <span style="color: gold; font-size: 30px;">🟡</span>
                 <span id="displayBalance">0</span>
             </div>
         </div>
 
-        <div class="game-area">
-            <div class="tap-button" id="tapBtn">
-                👽
+        <!-- Left Sidebar -->
+        <div class="sidebar sidebar-left">
+            <div class="side-icon" onclick="showAlert('Upgrade Shop coming soon!')">
+                <span>🚀</span>
+                <p>Upgrade</p>
+            </div>
+            <div class="side-icon" onclick="showAlert('Passport ID: # Mim-123')">
+                <span>🎫</span>
+                <p>Passport</p>
+            </div>
+            <div class="side-icon" onclick="showAlert('Skins coming soon!')">
+                <span>👕</span>
+                <p>Skins</p>
+            </div>
+            <div class="side-icon" onclick="showAlert('Task list is empty!')">
+                <span>📝</span>
+                <p>Task</p>
+            </div>
+            <div class="side-icon" onclick="inviteFriend()">
+                <span>📨</span>
+                <p>Invite</p>
             </div>
         </div>
 
-        <div class="energy-container">
-            <div class="energy-info">
-                <span>⚡ Energy</span>
-                <span><span id="currEnergy">1000</span> / <span id="maxEnergy">1000</span></span>
+        <!-- Right Sidebar -->
+        <div class="sidebar sidebar-right">
+            <div class="side-icon" onclick="showAlert('Super Avatar Locked')">
+                <span>🦸</span>
+                <p>Avatar</p>
             </div>
-            <div class="energy-bar-bg">
-                <div class="energy-fill" id="energyBar"></div>
+            <div class="side-icon" onclick="claimDaily()">
+                <span>📅</span>
+                <p>Daily</p>
             </div>
+            <div class="side-icon" onclick="showAlert('Battle Arena Closed')">
+                <span>⚔️</span>
+                <p>Battle</p>
+            </div>
+            <div class="side-icon" onclick="showAlert('Expedition Starting...')">
+                <span>🧭</span>
+                <p>Explore</p>
+            </div>
+            <div class="side-icon" onclick="toggleAutoTap()">
+                <span>🤖</span>
+                <p>AutoTap</p>
+            </div>
+        </div>
+
+        <!-- Character (Tap Zone) -->
+        <div class="character-container" id="tapZone">
+            <!-- Using Emoji as placeholder for Mim Star Character -->
+            <div class="character-img">🦁</div> 
+            <div class="tap-hint">Tap Me</div>
+        </div>
+
+    </div>
+
+    <!-- BOTTOM STATS -->
+    <div class="bottom-stats-bar">
+        <div class="energy-box">
+            <span class="bolt-icon">⚡</span>
+            <span class="energy-text"><span id="currEnergy">1000</span> / <span id="maxEnergy">1000</span></span>
+        </div>
+        <div class="per-tap-box">
+            🟡 +<span id="perTap">1</span>
         </div>
     </div>
 
-    <!-- 2. TASKS SCREEN -->
-    <div id="screen-tasks" class="screen hidden">
-        <div class="section-title">Daily Tasks</div>
-        
-        <div class="list-item">
-            <div class="item-left">
-                <div class="item-icon">📅</div>
-                <div class="item-details">
-                    <h4>Daily Check-in</h4>
-                    <p>+5,000 Coins</p>
-                </div>
-            </div>
-            <button class="btn-action" onclick="claimTask('daily', 5000, this)">Claim</button>
+    <!-- FOOTER NAVIGATION -->
+    <nav class="footer-nav">
+        <div class="nav-btn active">
+            <span class="nav-icon">🪙</span>
+            Home
         </div>
-
-        <div class="list-item">
-            <div class="item-left">
-                <div class="item-icon">📢</div>
-                <div class="item-details">
-                    <h4>Join Telegram Channel</h4>
-                    <p>+10,000 Coins</p>
-                </div>
-            </div>
-            <button class="btn-action" onclick="claimTask('social1', 10000, this)">Start</button>
+        <div class="nav-btn" onclick="showAlert('Game Center')">
+            <span class="nav-icon">🎮</span>
+            Games
         </div>
-        
-        <div class="list-item">
-            <div class="item-left">
-                <div class="item-icon">🐦</div>
-                <div class="item-details">
-                    <h4>Follow on X</h4>
-                    <p>+10,000 Coins</p>
-                </div>
-            </div>
-            <button class="btn-action" onclick="claimTask('social2', 10000, this)">Start</button>
+        <div class="nav-btn" onclick="showAlert('Slot Machine')">
+            <span class="nav-icon">🎰</span>
+            Slot
         </div>
-    </div>
-
-    <!-- 3. UPGRADE SCREEN -->
-    <div id="screen-upgrade" class="screen hidden">
-        <div class="section-title">Boosters</div>
-        
-        <!-- Multitap -->
-        <div class="list-item">
-            <div class="item-left">
-                <div class="item-icon">👆</div>
-                <div class="item-details">
-                    <h4>Multitap</h4>
-                    <p>Level <span id="lvl-multitap">1</span> • +1 per tap</p>
-                </div>
-            </div>
-            <button class="btn-action" id="btn-multitap" onclick="buyUpgrade('multitap')">
-                <span id="cost-multitap">500</span> 💰
-            </button>
+        <div class="nav-btn" onclick="showAlert('Treasure Hunter')">
+            <span class="nav-icon">🏹</span>
+            Hunt
         </div>
-
-        <!-- Energy Limit -->
-        <div class="list-item">
-            <div class="item-left">
-                <div class="item-icon">🔋</div>
-                <div class="item-details">
-                    <h4>Energy Limit</h4>
-                    <p>Level <span id="lvl-energy">1</span> • +500 max energy</p>
-                </div>
-            </div>
-            <button class="btn-action" id="btn-energy" onclick="buyUpgrade('energy')">
-                <span id="cost-energy">1000</span> 💰
-            </button>
-        </div>
-
-        <!-- Auto Tap Bot -->
-        <div class="list-item">
-            <div class="item-left">
-                <div class="item-icon">🤖</div>
-                <div class="item-details">
-                    <h4>Auto Tap Bot</h4>
-                    <p id="bot-status">Off</p>
-                </div>
-            </div>
-            <button class="btn-action" id="btn-bot" onclick="buyUpgrade('bot')">
-                <span id="cost-bot">20000</span> 💰
-            </button>
-        </div>
-    </div>
-
-    <!-- 4. FRIENDS / LEADERBOARD SCREEN -->
-    <div id="screen-friends" class="screen hidden">
-        <div class="section-title">Invite Friends</div>
-        
-        <div style="text-align: center; margin-bottom: 20px;">
-            <p style="color:var(--secondary-text)">Invite friends and get 10% of their earnings!</p>
-            <button class="btn-action" style="font-size: 16px; padding: 12px 24px;" onclick="inviteFriend()">
-                Invite Friend 🚀
-            </button>
-        </div>
-
-        <h3 style="align-self: flex-start;">Leaderboard</h3>
-        
-        <div class="list-item">
-            <div class="item-left">
-                <div class="item-icon">🥇</div>
-                <div class="item-details">
-                    <h4>Pavel Durov</h4>
-                    <p>999,999,999 Coins</p>
-                </div>
-            </div>
-        </div>
-        <div class="list-item">
-            <div class="item-left">
-                <div class="item-icon">🥈</div>
-                <div class="item-details">
-                    <h4>Elon Musk</h4>
-                    <p>500,000,000 Coins</p>
-                </div>
-            </div>
-        </div>
-        <div class="list-item">
-            <div class="item-left">
-                <div class="item-icon">🥉</div>
-                <div class="item-details">
-                    <h4>You</h4>
-                    <p><span id="leaderboard-balance">0</span> Coins</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Bottom Navigation -->
-    <nav class="bottom-nav">
-        <div class="nav-item active" onclick="switchScreen('home', this)">
-            <div class="nav-icon">🏠</div>
-            <span>Home</span>
-        </div>
-        <div class="nav-item" onclick="switchScreen('tasks', this)">
-            <div class="nav-icon">📋</div>
-            <span>Tasks</span>
-        </div>
-        <div class="nav-item" onclick="switchScreen('upgrade', this)">
-            <div class="nav-icon">🚀</div>
-            <span>Boost</span>
-        </div>
-        <div class="nav-item" onclick="switchScreen('friends', this)">
-            <div class="nav-icon">👥</div>
-            <span>Friends</span>
+        <div class="nav-btn" onclick="showAlert('Airdrop Info')">
+            <span class="nav-icon">💰</span>
+            Airdrop
         </div>
     </nav>
 
+    <!-- JS Logic -->
     <script>
-        // --- TELEGRAM WEBAPP INIT ---
+        // --- TELEGRAM INIT ---
         const tg = window.Telegram.WebApp;
-        tg.expand(); // Expand to full height
-        tg.setHeaderColor('#0d0d0d'); // Set header color to match bg
+        tg.expand(); // Full screen
+        tg.enableClosingConfirmation();
+        
+        // --- GAME VARIABLES ---
+        let user = tg.initDataUnsafe.user || { id: 'guest', first_name: 'Guest', username: 'guest' };
+        
+        // Use Telegram ID as key to save data separately for each user
+        const STORAGE_KEY = `mimstars_data_${user.id}`;
 
-        // --- GAME STATE MANAGEMENT ---
-        const defaultState = {
+        const defaultData = {
             balance: 0,
             energy: 1000,
             maxEnergy: 1000,
-            multitapLevel: 1,
-            energyLevel: 1,
-            hasBot: false,
-            lastLogin: Date.now(),
-            tasks: { daily: 0, social1: false, social2: false }
+            perTap: 1,
+            lastSave: Date.now()
         };
 
-        // Load state or use default
-        let gameState = JSON.parse(localStorage.getItem('gameState')) || defaultState;
-
-        // Upgrade Configs (Cost calculation: Base * 2^Level)
-        const UPGRADES = {
-            multitap: { baseCost: 500, costFactor: 2 },
-            energy: { baseCost: 1000, costFactor: 1.5 },
-            bot: { cost: 20000 }
-        };
+        let gameData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || defaultData;
 
         // UI References
         const els = {
             balance: document.getElementById('displayBalance'),
             currEnergy: document.getElementById('currEnergy'),
             maxEnergy: document.getElementById('maxEnergy'),
-            energyBar: document.getElementById('energyBar'),
-            tapBtn: document.getElementById('tapBtn'),
-            // Upgrade UI
-            lvlMultitap: document.getElementById('lvl-multitap'),
-            costMultitap: document.getElementById('cost-multitap'),
-            lvlEnergy: document.getElementById('lvl-energy'),
-            costEnergy: document.getElementById('cost-energy'),
-            btnBot: document.getElementById('btn-bot'),
-            botStatus: document.getElementById('bot-status'),
-            costBot: document.getElementById('cost-bot'),
-            // User
+            perTap: document.getElementById('perTap'),
+            tapZone: document.getElementById('tapZone'),
             userName: document.getElementById('userName'),
-            userAvatar: document.getElementById('userAvatar'),
-            lbBalance: document.getElementById('leaderboard-balance')
+            userAvatar: document.getElementById('userAvatar')
         };
 
-        // --- CORE FUNCTIONS ---
-
+        // --- INITIAL SETUP ---
         function init() {
             // Set User Info
-            const user = tg.initDataUnsafe.user;
-            if (user) {
-                els.userName.innerText = user.first_name + (user.last_name ? ' ' + user.last_name : '');
-                els.userAvatar.innerText = user.first_name.charAt(0).toUpperCase();
-            } else {
-                els.userName.innerText = "Guest Player";
-            }
+            els.userName.innerText = user.first_name;
+            els.userAvatar.innerText = user.first_name.charAt(0).toUpperCase();
 
-            // Calculate offline energy regen
+            // Calculate Energy Regen (Offline)
             const now = Date.now();
-            const secondsPassed = (now - gameState.lastLogin) / 1000;
-            const energyRegained = Math.floor(secondsPassed); // 1 energy per second
-            gameState.energy = Math.min(gameState.maxEnergy, gameState.energy + energyRegained);
+            const elapsedSeconds = (now - gameData.lastSave) / 1000;
+            const regenAmount = Math.floor(elapsedSeconds); // 1 energy per second
             
-            // Start Loops
-            setInterval(energyLoop, 1000); // Regen energy
-            setInterval(saveGame, 5000); // Auto save
-            if(gameState.hasBot) setInterval(autoTapLoop, 1000); // Bot loop
-
+            gameData.energy = Math.min(gameData.maxEnergy, gameData.energy + regenAmount);
+            
             updateUI();
-        }
-
-        function saveGame() {
-            gameState.lastLogin = Date.now();
-            localStorage.setItem('gameState', JSON.stringify(gameState));
-        }
-
-        function updateUI() {
-            // Main HUD
-            els.balance.innerText = gameState.balance.toLocaleString();
-            els.currEnergy.innerText = Math.floor(gameState.energy);
-            els.maxEnergy.innerText = gameState.maxEnergy;
-            els.lbBalance.innerText = gameState.balance.toLocaleString();
             
-            // Energy Bar Width
-            const pct = (gameState.energy / gameState.maxEnergy) * 100;
-            els.energyBar.style.width = `${pct}%`;
-
-            // Upgrades
-            const mtCost = Math.floor(UPGRADES.multitap.baseCost * Math.pow(UPGRADES.multitap.costFactor, gameState.multitapLevel - 1));
-            els.lvlMultitap.innerText = gameState.multitapLevel;
-            els.costMultitap.innerText = mtCost.toLocaleString();
-
-            const enCost = Math.floor(UPGRADES.energy.baseCost * Math.pow(UPGRADES.energy.costFactor, gameState.energyLevel - 1));
-            els.lvlEnergy.innerText = gameState.energyLevel;
-            els.costEnergy.innerText = enCost.toLocaleString();
-
-            if (gameState.hasBot) {
-                els.botStatus.innerText = "Active (1 tap/sec)";
-                els.btnBot.disabled = true;
-                els.btnBot.innerText = "Owned";
-            }
+            // Start loops
+            setInterval(regenLoop, 1000);
+            setInterval(saveData, 5000); // Auto save every 5s
         }
 
-        // --- GAMEPLAY ---
+        // --- CORE FUNCTIONS ---
+        function updateUI() {
+            els.balance.innerText = gameData.balance.toLocaleString();
+            els.currEnergy.innerText = gameData.energy;
+            els.maxEnergy.innerText = gameData.maxEnergy;
+            els.perTap.innerText = gameData.perTap;
+        }
 
-        // Tap Handler
-        els.tapBtn.addEventListener('touchstart', (e) => {
-            e.preventDefault(); // Prevent zoom
-            // Allow multitouch tapping
-            for (let i = 0; i < e.touches.length; i++) {
-                handleTap(e.touches[i].clientX, e.touches[i].clientY);
-            }
-        }, {passive: false});
+        function saveData() {
+            gameData.lastSave = Date.now();
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(gameData));
+        }
 
-        els.tapBtn.addEventListener('mousedown', (e) => {
-            handleTap(e.clientX, e.clientY);
-        });
-
-        function handleTap(x, y) {
-            const tapCost = gameState.multitapLevel; // Consume energy equal to tap power (optional balance choice)
-            const earnAmount = gameState.multitapLevel;
-
-            if (gameState.energy >= tapCost) {
-                // Logic
-                gameState.balance += earnAmount;
-                gameState.energy -= tapCost; // Or make fixed cost 1
-                
-                // Haptic Feedback (Telegram SDK)
-                if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
-
-                // Visuals
-                showFloatingText(x, y, `+${earnAmount}`);
+        function regenLoop() {
+            if (gameData.energy < gameData.maxEnergy) {
+                gameData.energy++;
                 updateUI();
-            } else {
-                 if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
             }
         }
 
-        function showFloatingText(x, y, text) {
+        // --- TAP LOGIC ---
+        function handleTap(e) {
+            // Prevent default zooming/scrolling
+            e.preventDefault(); 
+            
+            // Allow multi-touch
+            const touches = e.touches || [{ clientX: e.clientX, clientY: e.clientY }];
+
+            for (let i = 0; i < touches.length; i++) {
+                const touch = touches[i];
+                
+                if (gameData.energy >= gameData.perTap) {
+                    // Logic
+                    gameData.balance += gameData.perTap;
+                    gameData.energy -= gameData.perTap;
+                    
+                    // Visuals
+                    showFloatText(touch.clientX, touch.clientY, `+${gameData.perTap}`);
+                    
+                    // Haptics (Vibration)
+                    if(tg.HapticFeedback) {
+                        tg.HapticFeedback.impactOccurred('medium');
+                    }
+                }
+            }
+            updateUI();
+            
+            // Animation on character
+            const charImg = document.querySelector('.character-img');
+            charImg.style.transform = 'scale(0.95)';
+            setTimeout(() => charImg.style.transform = 'scale(1)', 100);
+        }
+
+        function showFloatText(x, y, text) {
             const el = document.createElement('div');
             el.className = 'float-text';
             el.innerText = text;
             el.style.left = `${x}px`;
             el.style.top = `${y}px`;
             document.body.appendChild(el);
-            
-            // Clean up
-            setTimeout(() => el.remove(), 1000);
+            setTimeout(() => el.remove(), 800);
         }
 
-        // Energy Regeneration Loop
-        function energyLoop() {
-            if (gameState.energy < gameState.maxEnergy) {
-                gameState.energy = Math.min(gameState.maxEnergy, gameState.energy + 1); // +1 per sec
-                updateUI();
-            }
-        }
+        // --- EVENTS ---
+        els.tapZone.addEventListener('touchstart', handleTap, {passive: false});
+        els.tapZone.addEventListener('mousedown', (e) => {
+            // Only for desktop testing
+            if(!('ontouchstart' in window)) handleTap(e);
+        });
 
-        // Auto Tap Bot Loop
-        function autoTapLoop() {
-            if (gameState.energy >= 1) {
-                gameState.balance += 1;
-                gameState.energy -= 1;
-                updateUI();
-            }
-        }
-
-        // --- NAVIGATION ---
-        window.switchScreen = function(screenName, navEl) {
-            // Hide all screens
-            document.querySelectorAll('.screen').forEach(el => el.classList.add('hidden'));
-            // Show target
-            document.getElementById(`screen-${screenName}`).classList.remove('hidden');
-            
-            // Update Nav Active State
-            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-            navEl.classList.add('active');
-        }
-
-        // --- UPGRADE SYSTEM ---
-        window.buyUpgrade = function(type) {
-            if (type === 'multitap') {
-                const cost = Math.floor(UPGRADES.multitap.baseCost * Math.pow(UPGRADES.multitap.costFactor, gameState.multitapLevel - 1));
-                if (gameState.balance >= cost) {
-                    gameState.balance -= cost;
-                    gameState.multitapLevel++;
-                    showSuccess();
-                }
-            } else if (type === 'energy') {
-                const cost = Math.floor(UPGRADES.energy.baseCost * Math.pow(UPGRADES.energy.costFactor, gameState.energyLevel - 1));
-                if (gameState.balance >= cost) {
-                    gameState.balance -= cost;
-                    gameState.energyLevel++;
-                    gameState.maxEnergy += 500;
-                    gameState.energy = gameState.maxEnergy; // Full heal on upgrade
-                    showSuccess();
-                }
-            } else if (type === 'bot') {
-                if (!gameState.hasBot && gameState.balance >= UPGRADES.bot.cost) {
-                    gameState.balance -= UPGRADES.bot.cost;
-                    gameState.hasBot = true;
-                    setInterval(autoTapLoop, 1000);
-                    showSuccess();
-                }
-            }
-            updateUI();
-            saveGame();
-        }
-
-        function showSuccess() {
-            if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-        }
-
-        // --- TASKS SYSTEM ---
-        window.claimTask = function(taskId, reward, btnEl) {
-            // Simple mock logic. In real app, check server or social API.
-            
-            if (taskId === 'daily') {
-                // Check if claimed today logic could go here
-                if(btnEl.innerText === "Claimed") return;
-                
-                gameState.balance += reward;
-                btnEl.innerText = "Claimed";
-                btnEl.disabled = true;
-                showSuccess();
-            } else {
-                // Social tasks: Open link, then wait/claim
-                // Just mocking the claim for demo
-                setTimeout(() => {
-                    gameState.balance += reward;
-                    btnEl.innerText = "Done";
-                    btnEl.disabled = true;
-                    showSuccess();
-                    updateUI();
-                }, 1000); // Simulate network delay
-            }
-            updateUI();
-            saveGame();
-        }
-
-        // --- INVITE SYSTEM ---
+        // --- FEATURE FUNCTIONS ---
         window.inviteFriend = function() {
-            const botUsername = "MyTapGameBot"; // Replace with your bot
-            const inviteLink = `https://t.me/share/url?url=https://t.me/${botUsername}?start=ref_${tg.initDataUnsafe.user?.id || 'guest'}`;
-            tg.openTelegramLink(inviteLink);
+            const botLink = "https://t.me/MimStarsBot";
+            const inviteUrl = `https://t.me/share/url?url=${botLink}&text=Join Mim Stars and earn coins!`;
+            tg.openTelegramLink(inviteUrl);
         }
 
-        // Initialize
+        window.showAlert = function(msg) {
+            tg.showAlert(msg);
+        }
+        
+        window.claimDaily = function() {
+            gameData.balance += 1000;
+            tg.showAlert("You claimed 1,000 Daily Coins!");
+            updateUI();
+            saveData();
+        }
+
+        let autoTapInterval = null;
+        window.toggleAutoTap = function() {
+            if(autoTapInterval) {
+                clearInterval(autoTapInterval);
+                autoTapInterval = null;
+                tg.showAlert("AutoTap Disabled");
+            } else {
+                tg.showAlert("AutoTap Activated (Demo Mode)");
+                autoTapInterval = setInterval(() => {
+                    if (gameData.energy >= gameData.perTap) {
+                        gameData.balance += gameData.perTap;
+                        gameData.energy -= gameData.perTap;
+                        updateUI();
+                    }
+                }, 500);
+            }
+        }
+
+        // Start
         init();
 
     </script>
